@@ -1,12 +1,11 @@
 #include "dmp.h"
 #include "IOI2C.h"
-#include "MPU9250.h"
 #include "math.h"
 
-float q[4]; /* ???*/
-float gyrof[3];  /* ?????*/
-float accelf[3]; /* ????*/
-float yprf[3];   /* Euler ??*/
+float q[4]; /* 四元数*/
+float gyrof[3];  /* X/Y/Z 角速度*/
+float accelf[3]; /* X/Y/Z 加速度 */
+float yprf[3];   /* yaw/pitch/roll*/
 float mag[3];
 unsigned char dmpdatas[42];
 
@@ -186,8 +185,7 @@ const unsigned char dmpcfgupddata[239] = {
     0x07,   0x47,   0x04,   0xF1, 0x28, 0x30, 0x38,   
     0x07,   0x6C,   0x04,   0xF1, 0x28, 0x30, 0x38,  
     0x02,   0x16,   0x02,   0x00, 0x00,              
-// ??????????FIFO rate :0x00=200HZ,0x01=100HZ,0x02=66HZ,0x03=50HZ ,0x04=40HZ,0x05=33.33HZ, 
-// ?? datasheet ????
+// FIFO rate :0x00=200HZ,0x01=100HZ,0x02=66HZ,0x03=50HZ ,0x04=40HZ,0x05=33.33HZ, 
 
 //dmp updates
     0x01,   0xB2,   0x02,   0xFF, 0xFF,
@@ -207,6 +205,7 @@ void Delayms(uint32_t m)
        for (i=0; i<6666; i++);
 }
 
+//读取DMP FIFO 的值，保存在dmpdatas 数组中
 void readdmp(void)
 {
 	IICreadBytes(GYRO_ADDRESS,0x74,42,dmpdatas);
@@ -226,6 +225,11 @@ long getdmplong(unsigned char address)
   return dmptempl;
 }
 
+/***********************************************************************
+*根据FIFO中的值计算四元数，计算yaw,pitch,roll  计算加速度，角速度
+************************************************************************/
+
+//计算四元数
 void getquaternion(void)
 {    
   q[0] = getdmplong(0)/1073741824.0;  
@@ -234,6 +238,21 @@ void getquaternion(void)
   q[3] = getdmplong(12)/1073741824.0;
 }
 
+//计算yaw、pitch、roll(函数中包含了四元数，无需再调用之前再计算四元数)
+void getyawpitchroll(void)
+{
+	getquaternion();//计算四元数
+ 
+	yprf[0]=-atan2(2.0*(q[0]*q[3] + q[1]*q[2]),
+	                     1 - 2.0*(q[2]*q[2] + q[3]*q[3]))*57.3;  //yaw
+	
+	yprf[1]=-asin(2.0*(q[0]*q[2] - q[3]*q[1]))*57.3;						//pitch
+
+	yprf[2] = atan2(2.0*(q[0]*q[1] + q[2]*q[3]),
+	                       1 - 2.0*(q[1]*q[1] + q[2]*q[2]))*57.3; //roll
+}
+
+//计算加速度和角速度
 void getAcc_gyro()
 {
 	uint8_t buf[20];
@@ -246,8 +265,9 @@ void getAcc_gyro()
 	gyrof[2]=	((int16_t)((buf[11]<<8)|buf[10]))/8192.0;//gyro-z
 	
 }
+/**********************************************************/
 
-
+//获取 X/Y/Z 磁力计值
 void getmag()
 {
 	uint8_t BUF[10];
@@ -324,48 +344,96 @@ void loadcfgupd(void)
   }
 }
 
-void getyawpitchroll(void)
+
+void MPU9250_Sleep()
 {
- 
-	yprf[0]=-atan2(2.0*(q[0]*q[3] + q[1]*q[2]),
-	                     1 - 2.0*(q[2]*q[2] + q[3]*q[3]))*57.3;  //yaw
-	
-	yprf[1]=-asin(2.0*(q[0]*q[2] - q[3]*q[1]))*57.3;						//pitch
-
-	yprf[2] = atan2(2.0*(q[0]*q[1] + q[2]*q[3]),
-	                       1 - 2.0*(q[1]*q[1] + q[2]*q[2]))*57.3; //roll
-
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x40);//pw1	
 }
 
-void Init_dmp(void)
+void MPU9250_WakeUp()
+{
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
+}
+
+
+void MPU9250_resetFIFO(void)
+{
+    IICwriteBit(GYRO_ADDRESS, MPU9250_RA_USER_CTRL, MPU9250_USERCTRL_FIFO_RESET_BIT, 1);
+}
+
+
+uint16_t MPU9250_getFIFOCount(void) 
+{
+	uint8_t buffer[2] = {0};
+	IICreadBytes(GYRO_ADDRESS, MPU9250_RA_FIFO_COUNTH, 2, buffer);
+	return (((uint16_t)buffer[0]) << 8) | buffer[1];
+}
+
+/**************************????********************************************
+通过读取IO口电平的方式，判断MPU9250的中断是否发生，1发生中断，0没有发生中断
+*******************************************************************************/
+unsigned char MPU9250_Interrupted(void)
+{
+	if(HAL_GPIO_ReadPin(MPU9250_INT_PORT,MPU9250_INT_PIN)==1)
+		return 1;
+	else
+		return 0;
+}
+
+void MPU9250_INT_init()
+{
+  GPIO_InitTypeDef   GPIO_InitStructure;
+  /* Enable GPIOA clock */
+  __GPIOA_CLK_ENABLE();
+	
+  /* Configure PA8 pin as input floating */
+  GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
+  GPIO_InitStructure.Pin = MPU9250_INT_PIN;
+  GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
+  HAL_GPIO_Init(MPU9250_INT_PORT, &GPIO_InitStructure);
+	
+
+	
+	/*******************可以使能中断，这样在MPU9250发生中断事件时会通知MCU******************************/
+	/*********************也可以不使用中断的方式，通过查询IO口的电平得知中断事件是否发生*******************/
+  /* Enable and set EXTI4_15 Interrupt priority */
+//  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);
+//  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+	
+	/*************设置 MPU9250中断事件*************/
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_PIN_CFG, 0x00); //set pull-up high_active
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_ENABLE, 0x40);//set the whole register to 0x40 to enable motion interrupt only
+	
+	//设置移动中断的阈值
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_DETECT_CTRL, 0xC0);//set ACCEL_INTEL_EN = 1 and ACCEL_INTEL_MODE = 1 
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_THR, 0x9F);
+	
+	/***************************************/	
+}
+	
+//初始化MPU9250并且开启DMP	
+void Init_MPU9250_With_DMP(void)
 {        
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_2, 0x00);	//pw2 
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_2, 0x00);//pw2	
 	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_SMPLRT_DIV, 0x04);//1000/50 = 20hz
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_CONFIG, 0x06); //1KHZ
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_GYRO_CONFIG, 0x18);//+- 2000
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_ACCEL_CONFIG, 0x10);//+- 4g
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_ACCEL_CONFIG_2, 0x09);//band 184 Hz
 	
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_PIN_CFG, 0x00); //set pull-up high_active
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_ENABLE, 0x40);//set the whole register to 0x40 to enable motion interrupt only
-	
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_DETECT_CTRL, 0xC0);//set ACCEL_INTEL_EN = 1 and ACCEL_INTEL_MODE = 1 
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_THR, 0x9F);
-	
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_LP_ACCEL_ODR, 0x0B);//Set Frequency of Wake-up to 500Hz
-	
+	//设置MPU9250中断
+	MPU9250_INT_init();
+
+	/***********************DMP 的配置(开启DMP ，设置DMP FIFO)***************************/
 	loadfirmware(); 
 	loadcfgupd();
 	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_DMP_CFG_1 , 0x03);                         
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_DMP_CFG_2 , 0x00);                         
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_USER_CTRL , 0xcc);  
-
-
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x20);//pw1	cycle
+	/********************************************************/
 }
 
 
