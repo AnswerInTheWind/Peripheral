@@ -339,24 +339,20 @@ void getyawpitchroll(void)
 
 void Init_dmp(void)
 {        
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_2, 0x00);	//pw2 
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_2, 0x00);//pw2	
 	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_SMPLRT_DIV, 0x04);//1000/50 = 20hz
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_CONFIG, 0x06); //1KHZ
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_GYRO_CONFIG, 0x18);//+- 2000
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_ACCEL_CONFIG, 0x10);//+- 4g
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_ACCEL_CONFIG_2, 0x09);//band 184 Hz
 	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_PIN_CFG, 0x00); //set pull-up high_active
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_INT_ENABLE, 0x40);//set the whole register to 0x40 to enable motion interrupt only
 	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_DETECT_CTRL, 0xC0);//set ACCEL_INTEL_EN = 1 and ACCEL_INTEL_MODE = 1 
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_THR, 0x9F);
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_MOT_THR, 0x9F);	
 	
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_LP_ACCEL_ODR, 0x0B);//Set Frequency of Wake-up to 500Hz
-	
+	/**********************写入DMP的密码，启动DMP引擎, 并存在FIFO中**************************/
 	loadfirmware(); 
 	loadcfgupd();
 	
@@ -364,8 +360,8 @@ void Init_dmp(void)
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_DMP_CFG_2 , 0x00);                         
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_USER_CTRL , 0xcc);  
 
+	/*****************************************************************************/
 
-//	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x20);//pw1	cycle
 }
 
 

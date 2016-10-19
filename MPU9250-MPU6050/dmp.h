@@ -13,10 +13,8 @@ void Init_dmp(void);
 void getyawpitchroll(void);
 void getquaternion(void);
 void getmag(void);
-long getdmplong(unsigned char address);
 void readdmp(void);
 void getAcc_gyro(void);
-void Delayms(uint32_t m);
 
 #endif
 

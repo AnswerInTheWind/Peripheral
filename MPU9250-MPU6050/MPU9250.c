@@ -15,14 +15,14 @@ void MPU9250_INT_init()
   GPIO_InitTypeDef   GPIO_InitStructure;
   /* Enable GPIOA clock */
   __GPIOA_CLK_ENABLE();
-	
+
   /* Configure PA8 pin as input floating */
   GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStructure.Pull = GPIO_PULLDOWN;
   GPIO_InitStructure.Pin = MPU9250_INT_PIN;
   GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
   HAL_GPIO_Init(MPU9250_INT_PORT, &GPIO_InitStructure);
-	
+
   /* Enable and set EXTI4_15 Interrupt priority */
 //  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 1, 0);//
 //  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
@@ -30,19 +30,19 @@ void MPU9250_INT_init()
 
 void MPU9250_Sleep()
 {
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x40);//pw1	
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x40);//pw1
 }
 
 void MPU9250_WakeUp()
 {
-	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1
 }
 
 /**************************实现函数********************************************
 *函数原型:		unsigned char MPU9250_is_DRY(void)
-*功　　能:	    检查 MPU9250的中断引脚，测试是否完成转换
-返回 1  转换完成
-0 数据寄存器还没有更新
+*功　　能:	    检查 MPU9250的中断引脚，
+返回            1  中断发生
+                0  没有中断
 *******************************************************************************/
 unsigned char MPU9250_is_DRY(void)
 {
@@ -70,7 +70,7 @@ void MPU9250_resetFIFO(void)
  * set of sensor data bound to be stored in the FIFO (register 35 and 36).
  * @return Current FIFO buffer size
  */
-uint16_t MPU9250_getFIFOCount(void) 
+uint16_t MPU9250_getFIFOCount(void)
 {
     IICreadBytes(devAddr, MPU9250_RA_FIFO_COUNTH, 2, buffer);
     return (((uint16_t)buffer[0]) << 8) | buffer[1];
