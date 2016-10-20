@@ -37,7 +37,7 @@ MPU9250相关的文件有三个dmp.c/dmp.h/MPU9250_api.h
 2. 	函数调用
 
 ``` c
-while(1)
+while(1)//使用循环是为了等待DMP转换完成
 {		
 	fifo_count = MPU9250_getFIFOCount();//读取FIFO计数
 	
@@ -53,8 +53,8 @@ while(1)
 			readdmp(); //首先要读取DMP FIFO，读取之后才能进行计算姿态的操作
 			MPU9250_resetFIFO();					
 			getyawpitchroll();//计算并且获取yaw、pitch、roll，结果保存在yprf[3]数组中
-
-		}
+			break;//转换并且计算完成之后退出循环
+		}	
 	}		
 }
 ```
