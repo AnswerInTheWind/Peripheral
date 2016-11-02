@@ -23,6 +23,11 @@ MPU9250相关的文件有三个dmp.c/dmp.h/MPU9250_api.h
 其中，接口都在MPU9250_api.h文件中，包括MPU9250/DMP的初始化，传感数值的获取。
 
 ## 驱动文件使用方法 ##
+首先需要把这五个文件添加到工程里面去
+然后
+- 在初始化的文件中#include "IOI2C.H" #include "MPU9250_api.h"
+- 在需要获取传感器数值的文件中#include "MPU9250_api.h"
+
 1. 初始化
 	
 	IIC_Init();//模拟I2C驱动的初始化，一定要先初始化I2C接口才能操作MPU9250芯片
@@ -32,7 +37,7 @@ MPU9250相关的文件有三个dmp.c/dmp.h/MPU9250_api.h
 2. 	函数调用
 
 ``` c
-while(1)
+while(1)//使用循环是为了等待DMP转换完成
 {		
 	fifo_count = MPU9250_getFIFOCount();//读取FIFO计数
 	
@@ -48,8 +53,8 @@ while(1)
 			readdmp(); //首先要读取DMP FIFO，读取之后才能进行计算姿态的操作
 			MPU9250_resetFIFO();					
 			getyawpitchroll();//计算并且获取yaw、pitch、roll，结果保存在yprf[3]数组中
-
-		}
+			break;//转换并且计算完成之后退出循环
+		}	
 	}		
 }
 ```
