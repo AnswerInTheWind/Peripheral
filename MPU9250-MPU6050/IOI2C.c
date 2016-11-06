@@ -3,9 +3,17 @@
 #define TRUE 1
 #define FALSE 0
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_Init(void)
-*¹¦¡¡¡¡ÄÜ:		³õÊ¼»¯I2C¶ÔÓ¦µÄ½Ó¿ÚÒı½Å¡£
+static uint8_t IIC_Start(void);				
+static void IIC_Stop(void);	  		
+static void IIC_Send_Byte(uint8_t txd);	
+static uint8_t IIC_Read_Byte(void);
+static uint8_t IIC_Wait_Ack(void); 	
+static void IIC_Ack(void);				
+static void IIC_NAck(void);		
+
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_Init(void)
+*åŠŸã€€ã€€èƒ½:		åˆå§‹åŒ–I2Cå¯¹åº”çš„æ¥å£å¼•è„šã€‚
 *******************************************************************************/
 void IIC_Init(void)
 {
@@ -42,7 +50,7 @@ void IIC_Analog(void)
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 
-void IIC_delay(void)
+static void IIC_delay(void)
 {
    uint8_t i=5;
    while(i)
@@ -50,31 +58,38 @@ void IIC_delay(void)
      i--;
    }
 }
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_Start(void)
-*¹¦¡¡¡¡ÄÜ:		²úÉúIICÆğÊ¼ĞÅºÅ
+
+void DelayMs(uint32_t xms)
+{
+  uint32_t start_time = HAL_GetTick();
+  while(HAL_GetTick() - start_time <xms);
+}
+
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_Start(void)
+*åŠŸã€€ã€€èƒ½:		äº§ç”ŸIICèµ·å§‹ä¿¡å·
 *******************************************************************************/
-uint8_t IIC_Start(void)
+static uint8_t IIC_Start(void)
 {
 	SDA_H;
 	SCL_H;
 	IIC_delay();
 	if(!SDA_read)
-		return FALSE;	//SDAÏßÎªµÍµçÆ½Ôò×ÜÏßÃ¦,ÍË³ö
+		return FALSE;	
 	SDA_L;
 	IIC_delay();
 	if(SDA_read)
-		return FALSE;	//SDAÏßÎª¸ßµçÆ½Ôò×ÜÏß³ö´í,ÍË³ö
+		return FALSE;	
 	SDA_L;
 	IIC_delay();
 	return TRUE;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_Stop(void)
-*¹¦¡¡¡¡ÄÜ:	    //²úÉúIICÍ£Ö¹ĞÅºÅ
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_Stop(void)
+*åŠŸã€€ã€€èƒ½:	    //äº§ç”ŸIICåœæ­¢ä¿¡å·
 *******************************************************************************/
-void IIC_Stop(void)
+static void IIC_Stop(void)
 {
 	SCL_L;
 	IIC_delay();
@@ -86,13 +101,13 @@ void IIC_Stop(void)
 	IIC_delay();
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IIC_Wait_Ack(void)
-*¹¦¡¡¡¡ÄÜ:	    µÈ´ıÓ¦´ğĞÅºÅµ½À´
-//·µ»ØÖµ£º1£¬½ÓÊÕÓ¦´ğÊ§°Ü
-//        0£¬½ÓÊÕÓ¦´ğ³É¹¦
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IIC_Wait_Ack(void)
+*åŠŸã€€ã€€èƒ½:	    ç­‰å¾…åº”ç­”ä¿¡å·åˆ°æ¥
+//è¿”å›å€¼ï¼š1ï¼Œæ¥æ”¶åº”ç­”å¤±è´¥
+//        0ï¼Œæ¥æ”¶åº”ç­”æˆåŠŸ
 *******************************************************************************/
-uint8_t IIC_Wait_Ack(void) 	 //·µ»ØÎª:=1ÓĞACK,=0ÎŞACK
+static uint8_t IIC_Wait_Ack(void) 	
 {
 	SCL_L;
 	IIC_delay();
@@ -111,11 +126,11 @@ uint8_t IIC_Wait_Ack(void) 	 //·µ»ØÎª:=1ÓĞACK,=0ÎŞACK
 	return TRUE;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_Ack(void)
-*¹¦¡¡¡¡ÄÜ:	    ²úÉúACKÓ¦´ğ
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_Ack(void)
+*åŠŸã€€ã€€èƒ½:	    äº§ç”ŸACKåº”ç­”
 *******************************************************************************/
-void IIC_Ack(void)
+static void IIC_Ack(void)
 {
 	SCL_L;
 	IIC_delay();
@@ -127,11 +142,11 @@ void IIC_Ack(void)
 	IIC_delay();
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_NAck(void)
-*¹¦¡¡¡¡ÄÜ:	    ²úÉúNACKÓ¦´ğ
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_NAck(void)
+*åŠŸã€€ã€€èƒ½:	    äº§ç”ŸNACKåº”ç­”
 *******************************************************************************/
-void IIC_NAck(void)
+static void IIC_NAck(void)
 {
 	SCL_L;
 	IIC_delay();
@@ -143,11 +158,11 @@ void IIC_NAck(void)
 	IIC_delay();
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		void IIC_Send_Byte(uint8_t txd)
-*¹¦¡¡¡¡ÄÜ:	    IIC·¢ËÍÒ»¸ö×Ö½Ú
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		void IIC_Send_Byte(uint8_t txd)
+*åŠŸã€€ã€€èƒ½:	    IICå‘é€ä¸€ä¸ªå­—èŠ‚
 *******************************************************************************/
-void IIC_Send_Byte(uint8_t SendByte) //Êı¾İ´Ó¸ßÎ»µ½µÍÎ»//
+static void IIC_Send_Byte(uint8_t SendByte) 
 {
     uint8_t i=8;
     while(i--)
@@ -166,11 +181,11 @@ void IIC_Send_Byte(uint8_t SendByte) //Êı¾İ´Ó¸ßÎ»µ½µÍÎ»//
     SCL_L;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IIC_Read_Byte(unsigned char ack)
-*¹¦¡¡¡¡ÄÜ:	    //¶Á1´®×Ö½Ú£¬ack=1Ê±£¬·¢ËÍACK£¬ack=0£¬·¢ËÍnACK
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IIC_Read_Byte(unsigned char ack)
+*åŠŸã€€ã€€èƒ½:	    //è¯»1ä¸²å­—èŠ‚ï¼Œack=1æ—¶ï¼Œå‘é€ACKï¼Œack=0ï¼Œå‘é€nACK
 *******************************************************************************/
-unsigned char IIC_Read_Byte(void)  //Êı¾İ´Ó¸ßÎ»µ½µÍÎ»//
+static unsigned char IIC_Read_Byte(void)  
 {
     uint8_t i=8;
     uint8_t ReceiveByte=0;
@@ -192,25 +207,25 @@ unsigned char IIC_Read_Byte(void)  //Êı¾İ´Ó¸ßÎ»µ½µÍÎ»//
     return ReceiveByte;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		unsigned char I2C_ReadOneByte(unsigned char I2C_Addr,unsigned char addr)
-*¹¦¡¡¡¡ÄÜ:	    ¶ÁÈ¡Ö¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷µÄÒ»¸öÖµ
-ÊäÈë	I2C_Addr  Ä¿±êÉè±¸µØÖ·
-		addr	   ¼Ä´æÆ÷µØÖ·
-·µ»Ø   ¶Á³öÀ´µÄÖµ
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		unsigned char IIC_ReadOneByte(unsigned char I2C_Addr,unsigned char addr)
+*åŠŸã€€ã€€èƒ½:	    è¯»å–æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨çš„ä¸€ä¸ªå€¼
+è¾“å…¥	I2C_Addr  ç›®æ ‡è®¾å¤‡åœ°å€
+		addr	   å¯„å­˜å™¨åœ°å€
+è¿”å›   è¯»å‡ºæ¥çš„å€¼
 *******************************************************************************/
-uint8_t I2C_ReadOneByte(uint8_t SlaveAddress,uint8_t REG_Address)
+uint8_t IIC_ReadOneByte(uint8_t SlaveAddress,uint8_t REG_Address)
 {
 		uint8_t REG_data;
 		if(!IIC_Start())
 			return FALSE;
-    IIC_Send_Byte(SlaveAddress); //I2C_SendByte(((REG_Address & 0x0700) >>7) | REG_Address & 0xFFFE);//ÉèÖÃ¸ßÆğÊ¼µØÖ·+Æ÷¼şµØÖ·
+    IIC_Send_Byte(SlaveAddress); 
     if(!IIC_Wait_Ack())
 		{
 			IIC_Stop();
 			return FALSE;
 		}
-    IIC_Send_Byte((uint8_t) REG_Address);   //ÉèÖÃµÍÆğÊ¼µØÖ·
+    IIC_Send_Byte((uint8_t) REG_Address);   
     IIC_Wait_Ack();
     IIC_Start();
     IIC_Send_Byte(SlaveAddress+1);
@@ -225,27 +240,27 @@ uint8_t I2C_ReadOneByte(uint8_t SlaveAddress,uint8_t REG_Address)
 }
 
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t length, uint8_t *data)
-*¹¦¡¡¡¡ÄÜ:	    ¶ÁÈ¡Ö¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷µÄ length¸öÖµ
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	  ¼Ä´æÆ÷µØÖ·
-		length Òª¶ÁµÄ×Ö½ÚÊı
-		*data  ¶Á³öµÄÊı¾İ½«Òª´æ·ÅµÄÖ¸Õë
-·µ»Ø   ¶Á³öÀ´µÄ×Ö½ÚÊıÁ¿
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t length, uint8_t *data)
+*åŠŸã€€ã€€èƒ½:	    è¯»å–æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨çš„ lengthä¸ªå€¼
+è¾“å…¥	dev  ç›®æ ‡è®¾å¤‡åœ°å€
+		reg	  å¯„å­˜å™¨åœ°å€
+		length è¦è¯»çš„å­—èŠ‚æ•°
+		*data  è¯»å‡ºçš„æ•°æ®å°†è¦å­˜æ”¾çš„æŒ‡é’ˆ
+è¿”å›   è¯»å‡ºæ¥çš„å­—èŠ‚æ•°é‡
 *******************************************************************************/
 uint8_t IICreadBytes(uint8_t SlaveAddress,uint8_t REG_Address,uint8_t len,uint8_t *data)
 {
 		uint8_t i = 0;
 		if(!IIC_Start())
 			return FALSE;
-    IIC_Send_Byte(SlaveAddress); //I2C_SendByte(((REG_Address & 0x0700) >>7) | REG_Address & 0xFFFE);//ÉèÖÃ¸ßÆğÊ¼µØÖ·+Æ÷¼şµØÖ·
+    IIC_Send_Byte(SlaveAddress); 
     if(!IIC_Wait_Ack())
 		{
 			IIC_Stop();
 			return FALSE;
 		}
-    IIC_Send_Byte((uint8_t) REG_Address);   //ÉèÖÃµÍÆğÊ¼µØÖ·
+    IIC_Send_Byte((uint8_t) REG_Address);   
     IIC_Wait_Ack();
     IIC_Start();
     IIC_Send_Byte(SlaveAddress+1);
@@ -269,97 +284,71 @@ uint8_t IICreadBytes(uint8_t SlaveAddress,uint8_t REG_Address,uint8_t len,uint8_
 		return len;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t length, uint8_t* data)
-*¹¦¡¡¡¡ÄÜ:	    ½«¶à¸ö×Ö½ÚĞ´ÈëÖ¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	  ¼Ä´æÆ÷µØÖ·
-		length ÒªĞ´µÄ×Ö½ÚÊı
-		*data  ½«ÒªĞ´µÄÊı¾İµÄÊ×µØÖ·
-·µ»Ø   ·µ»ØÊÇ·ñ³É¹¦
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t length, uint8_t* data)
+*åŠŸã€€ã€€èƒ½:	    å°†å¤šä¸ªå­—èŠ‚å†™å…¥æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨
+è¾“å…¥	dev  ç›®æ ‡è®¾å¤‡åœ°å€
+		reg	  å¯„å­˜å™¨åœ°å€
+		length è¦å†™çš„å­—èŠ‚æ•°
+		*data  å°†è¦å†™çš„æ•°æ®çš„é¦–åœ°å€
+è¿”å›   è¿”å›æ˜¯å¦æˆåŠŸ
 *******************************************************************************/
 uint8_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t length, uint8_t* data)
 {
 
  	uint8_t count = 0;
 	IIC_Start();
-	IIC_Send_Byte(dev);	   //·¢ËÍĞ´ÃüÁî
+	IIC_Send_Byte(dev);	   
 	IIC_Wait_Ack();
-	IIC_Send_Byte(reg);   //·¢ËÍµØÖ·
+	IIC_Send_Byte(reg);   
     IIC_Wait_Ack();
 	for(count=0;count<length;count++)
 	{
 		IIC_Send_Byte(data[count]);
 		IIC_Wait_Ack();
 	 }
-	IIC_Stop();//²úÉúÒ»¸öÍ£Ö¹Ìõ¼ş
+	IIC_Stop();
 
     return 1; //status == 0;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IICreadByte(uint8_t dev, uint8_t reg, uint8_t *data)
-*¹¦¡¡¡¡ÄÜ:	    ¶ÁÈ¡Ö¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷µÄÒ»¸öÖµ
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	   ¼Ä´æÆ÷µØÖ·
-		*data  ¶Á³öµÄÊı¾İ½«Òª´æ·ÅµÄµØÖ·
-·µ»Ø   1
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IICreadByte(uint8_t dev, uint8_t reg, uint8_t *data)
+*åŠŸã€€ã€€èƒ½:	    è¯»å–æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨çš„ä¸€ä¸ªå€¼
+è¾“å…¥	dev  ç›®æ ‡è®¾å¤‡åœ°å€
+		reg	   å¯„å­˜å™¨åœ°å€
+		*data  è¯»å‡ºçš„æ•°æ®å°†è¦å­˜æ”¾çš„åœ°å€
+è¿”å›   1
 *******************************************************************************/
 uint8_t IICreadByte(uint8_t dev, uint8_t reg, uint8_t *data)
 {
-	*data=I2C_ReadOneByte(dev, reg);
+	*data=IIC_ReadOneByte(dev, reg);
     return 1;
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		unsigned char IICwriteByte(unsigned char dev, unsigned char reg, unsigned char data)
-*¹¦¡¡¡¡ÄÜ:	    Ğ´ÈëÖ¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷Ò»¸ö×Ö½Ú
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	   ¼Ä´æÆ÷µØÖ·
-		data  ½«ÒªĞ´ÈëµÄ×Ö½Ú
-·µ»Ø   1
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		unsigned char IICwriteByte(unsigned char dev, unsigned char reg, unsigned char data)
+*åŠŸã€€ã€€èƒ½:	    å†™å…¥æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨ä¸€ä¸ªå­—èŠ‚
+è¾“å…¥	dev  ç›®æ ‡è®¾å¤‡åœ°å€
+		reg	   å¯„å­˜å™¨åœ°å€
+		data  å°†è¦å†™å…¥çš„å­—èŠ‚
+è¿”å›   1
 *******************************************************************************/
 uint8_t IICwriteByte(uint8_t dev, uint8_t reg, uint8_t data)
 {
     return IICwriteBytes(dev, reg, 1, &data);
 }
 
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IICwriteBits(uint8_t dev,uint8_t reg,uint8_t bitStart,uint8_t length,uint8_t data)
-*¹¦¡¡¡¡ÄÜ:	    ¶Á ĞŞ¸Ä Ğ´ Ö¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷Ò»¸ö×Ö½Ú ÖĞµÄ¶à¸öÎ»
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	   ¼Ä´æÆ÷µØÖ·
-		bitStart  Ä¿±ê×Ö½ÚµÄÆğÊ¼Î»
-		length   Î»³¤¶È
-		data    ´æ·Å¸Ä±äÄ¿±ê×Ö½ÚÎ»µÄÖµ
-·µ»Ø   ³É¹¦ Îª1
- 		Ê§°ÜÎª0
-*******************************************************************************/
-uint8_t IICwriteBits(uint8_t dev,uint8_t reg,uint8_t bitStart,uint8_t length,uint8_t data)
-{
 
-    uint8_t b;
-    if (IICreadByte(dev, reg, &b) != 0) {
-        uint8_t mask = (0xFF << (bitStart + 1)) | 0xFF >> ((8 - bitStart) + length - 1);
-        data <<= (8 - length);
-        data >>= (7 - bitStart);
-        b &= mask;
-        b |= data;
-        return IICwriteByte(dev, reg, b);
-    } else {
-        return 0;
-    }
-}
-
-/**************************ÊµÏÖº¯Êı********************************************
-*º¯ÊıÔ­ĞÍ:		uint8_t IICwriteBit(uint8_t dev, uint8_t reg, uint8_t bitNum, uint8_t data)
-*¹¦¡¡¡¡ÄÜ:	    ¶Á ĞŞ¸Ä Ğ´ Ö¸¶¨Éè±¸ Ö¸¶¨¼Ä´æÆ÷Ò»¸ö×Ö½Ú ÖĞµÄ1¸öÎ»
-ÊäÈë	dev  Ä¿±êÉè±¸µØÖ·
-		reg	   ¼Ä´æÆ÷µØÖ·
-		bitNum  ÒªĞŞ¸ÄÄ¿±ê×Ö½ÚµÄbitNumÎ»
-		data  Îª0 Ê±£¬Ä¿±êÎ»½«±»Çå0 ·ñÔò½«±»ÖÃÎ»
-·µ»Ø   ³É¹¦ Îª1
- 		Ê§°ÜÎª0
+/**************************å®ç°å‡½æ•°********************************************
+*å‡½æ•°åŸå‹:		uint8_t IICwriteBit(uint8_t dev, uint8_t reg, uint8_t bitNum, uint8_t data)
+*åŠŸã€€ã€€èƒ½:	    è¯» ä¿®æ”¹ å†™ æŒ‡å®šè®¾å¤‡ æŒ‡å®šå¯„å­˜å™¨ä¸€ä¸ªå­—èŠ‚ ä¸­çš„1ä¸ªä½
+è¾“å…¥	dev  ç›®æ ‡è®¾å¤‡åœ°å€
+		reg	   å¯„å­˜å™¨åœ°å€
+		bitNum  è¦ä¿®æ”¹ç›®æ ‡å­—èŠ‚çš„bitNumä½
+		data  ä¸º0 æ—¶ï¼Œç›®æ ‡ä½å°†è¢«æ¸…0 å¦åˆ™å°†è¢«ç½®ä½
+è¿”å›   æˆåŠŸ ä¸º1
+ 		å¤±è´¥ä¸º0
 *******************************************************************************/
 uint8_t IICwriteBit(uint8_t dev, uint8_t reg, uint8_t bitNum, uint8_t data)
 {
