@@ -278,10 +278,10 @@ void getmag()
 
 	while(1)
 	{
-		temp = I2C_ReadOneByte(MAG_ADDRESS,0x09)&0x08;
+		temp = IIC_ReadOneByte(MAG_ADDRESS,0x09)&0x08;
 		if(temp)
 		{		
-			I2C_ReadOneByte (MAG_ADDRESS,MPU9250_RA_MAG_XOUT_L);
+			IIC_ReadOneByte (MAG_ADDRESS,MPU9250_RA_MAG_XOUT_L);
 			return;
 		}
 		else
@@ -414,7 +414,9 @@ void MPU9250_INT_init()
 	
 //初始化MPU9250并且开启DMP	
 void Init_MPU9250_With_DMP(void)
-{        
+{ 
+	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x80);//pw1	
+  DelayMs(100);  
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_1, 0x00);//pw1	
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_PWR_MGMT_2, 0x00);//pw2	
 	
