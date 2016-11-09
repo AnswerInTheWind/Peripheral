@@ -28,7 +28,7 @@ extern uint8_t IICreadBytes(uint8_t SlaveAddress,uint8_t REG_Address,uint8_t len
 extern void IIC_Analog(void);
 
 
-void DelayMs(uint32_t xms);
+void Delay_ms(uint32_t xms);
 
 #endif
 

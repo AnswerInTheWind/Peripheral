@@ -59,7 +59,7 @@ static void IIC_delay(void)
    }
 }
 
-void DelayMs(uint32_t xms)
+void Delay_ms(uint32_t xms)
 {
   uint32_t start_time = HAL_GetTick();
   while(HAL_GetTick() - start_time <xms);

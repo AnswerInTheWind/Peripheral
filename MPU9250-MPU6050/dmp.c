@@ -425,8 +425,8 @@ void Init_MPU9250_With_DMP(void)
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_GYRO_CONFIG, 0x18);//+- 2000
 	IICwriteByte(GYRO_ADDRESS,MPU9250_RA_ACCEL_CONFIG, 0x10);//+- 4g
 	
-	//设置MPU9250中断
-	MPU9250_INT_init();
+	//设置MPU9250中断,如不需要就无需设置
+	// MPU9250_INT_init();
 
 	/***********************DMP 的配置(开启DMP ，设置DMP FIFO)***************************/
 	loadfirmware(); 

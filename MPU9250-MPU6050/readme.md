@@ -29,14 +29,15 @@ MPU9250相关的文件有三个dmp.c/dmp.h/MPU9250_api.h
 - 在需要获取传感器数值的文件中#include "MPU9250_api.h"
 
 1. 初始化
-	
-	IIC_Init();//模拟I2C驱动的初始化，一定要先初始化I2C接口才能操作MPU9250芯片
-	
-	Init_MPU9250_With_DMP();//初始化MPU9250,配置并且开启DMP，设置中断方式为加速度方式
+```	
+IIC_Init();//模拟I2C驱动的初始化，一定要先初始化I2C接口才能操作MPU9250芯片
 
+Init_MPU9250_With_DMP();//初始化MPU9250,配置并且开启DMP，设置中断方式为加速度方式
+```
 2. 	函数调用
 
 ``` c
+uint16_t fifo_count = 0;
 while(1)//使用循环是为了等待DMP转换完成
 {		
 	fifo_count = MPU9250_getFIFOCount();//读取FIFO计数
